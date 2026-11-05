@@ -1,0 +1,12 @@
+services:
+  redis:
+    image: redis:7.4-alpine
+    container_name: desafio-cache-redis
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--maxmemory", "64mb", "--maxmemory-policy", "allkeys-lru"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 2s
+      retries: 10

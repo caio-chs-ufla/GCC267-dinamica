@@ -1,0 +1,13 @@
+spring:
+  application:
+    name: desafio-cache-redis
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      database: 0
+      timeout: 2s
+
+# Quanto tempo o "banco" simulado leva para responder cada consulta
+banco:
+  latencia-ms: 100
