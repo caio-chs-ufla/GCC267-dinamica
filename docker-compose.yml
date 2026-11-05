@@ -1,12 +1,59 @@
+# Tudo roda em containers: não precisa ter Java nem Maven instalados.
+#
+#   docker compose up -d                  -> sobe o Redis e a API (http://localhost:8080)
+#   docker compose run --rm testes        -> roda os testes e mostra o placar
+#   docker compose run --rm testes -Dtest=Bug1PerfilTest  -> roda só um bug
+#   docker compose restart api            -> recompila e reinicia a API depois de editar o código
+#
+# O código do projeto é montado no container, então as suas alterações em src/
+# são vistas na hora. As dependências do Maven ficam guardadas no volume "maven-repo"
+# (só são baixadas na primeira vez) e a pasta target/ fica em volumes próprios,
+# para não criar arquivos de root na sua máquina.
+
+x-maven: &maven
+  image: maven:3.9.11-eclipse-temurin-17
+  working_dir: /app
+  environment:
+    REDIS_HOST: redis
+  depends_on:
+    redis:
+      condition: service_healthy
+
 services:
   redis:
     image: redis:7.4-alpine
     container_name: desafio-cache-redis
-    ports:
-      - "6379:6379"
+    # Sem porta no host: a API e os testes falam com o Redis pela rede do Docker.
+    # Para inspecionar: docker exec -it desafio-cache-redis redis-cli
     command: ["redis-server", "--maxmemory", "64mb", "--maxmemory-policy", "allkeys-lru"]
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 2s
       timeout: 2s
       retries: 10
+
+  api:
+    <<: *maven
+    container_name: desafio-cache-api
+    command: ["mvn", "-q", "-B", "spring-boot:run"]
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./:/app
+      - maven-repo:/root/.m2
+      - target-api:/app/target
+
+  testes:
+    <<: *maven
+    profiles: ["testes"]
+    # Parâmetros extras vão para o Maven: docker compose run --rm testes -Dtest=Bug1PerfilTest
+    entrypoint: ["mvn", "-B", "test"]
+    volumes:
+      - ./:/app
+      - maven-repo:/root/.m2
+      - target-testes:/app/target
+
+volumes:
+  maven-repo:
+  target-api:
+  target-testes:

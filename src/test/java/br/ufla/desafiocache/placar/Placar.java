@@ -80,8 +80,8 @@ public class Placar implements TestExecutionListener {
                 sb.append(String.format("  %s  %s%n", ok ? "[OK]" : "[  ]", titulos.getOrDefault(classe, classe))));
         sb.append(linha).append('\n');
         if (falhaDeConexao) {
-            sb.append("  ATENCAO: nao consegui falar com o Redis em localhost:6379.\n");
-            sb.append("  Rode \"docker compose up -d\" na pasta do projeto e tente de novo.\n");
+            sb.append("  ATENCAO: nao consegui falar com o Redis.\n");
+            sb.append("  Rode \"docker compose up -d redis\" na pasta do projeto e tente de novo.\n");
             sb.append(linha).append('\n');
         }
         System.out.println(sb);

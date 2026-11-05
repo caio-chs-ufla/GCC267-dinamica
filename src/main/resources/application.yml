@@ -3,7 +3,7 @@ spring:
     name: desafio-cache-redis
   data:
     redis:
-      host: localhost
+      host: ${REDIS_HOST:localhost}
       port: 6379
       database: 0
       timeout: 2s

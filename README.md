@@ -8,16 +8,15 @@ O "banco de dados" é simulado: cada consulta demora 100 ms e é contada. Assim 
 
 ## Antes da aula (faça em casa)
 
-Você precisa de **Java 17 ou mais novo** e **Docker**.
+Você só precisa do **Docker** (com o Docker Compose). Não é preciso instalar Java, Maven nem Redis: tudo roda em containers.
 
 ```bash
-# 1. Suba o Redis
-docker compose up -d
-
-# 2. Rode o verificador uma vez (baixa as dependências e mostra o placar)
+# Rode o verificador uma vez (sobe o Redis, baixa as dependências e mostra o placar)
 verificar.cmd        # Windows
 ./verificar.sh       # Linux / macOS
 ```
+
+A primeira execução demora alguns minutos porque baixa as imagens e as dependências do Maven. Elas ficam guardadas em volumes do Docker, então das próximas vezes é rápido.
 
 Se aparecer `PLACAR: 0 de 4 bugs corrigidos`, está tudo pronto. É assim mesmo: os bugs ainda estão lá.
 
@@ -72,28 +71,40 @@ O ranking é caro de calcular e fica 60 segundos no cache. Quando a chave expira
 
 ```bash
 # Rodar só um bug
-./mvnw test -Dtest=Bug1PerfilTest          # Windows: mvnw.cmd test -Dtest=Bug1PerfilTest
+./verificar.sh -Dtest=Bug1PerfilTest       # Windows: verificar.cmd -Dtest=Bug1PerfilTest
+# (equivale a: docker compose run --rm testes -Dtest=Bug1PerfilTest)
 
-# Subir a API em http://localhost:8080
-./mvnw spring-boot:run
+# Subir o Redis e a API em http://localhost:8080
+docker compose up -d
+docker compose logs -f api                 # acompanhar a API subindo (Ctrl+C para sair)
+
+# Depois de editar o código, recompilar e reiniciar a API
+docker compose restart api
 
 # Olhar o que está no Redis
 docker exec -it desafio-cache-redis redis-cli
 > KEYS *
 > GET perfil
 > TTL eventos:ativos
+
+# Desligar tudo
+docker compose down
 ```
 
 Os testes usam o banco lógico 1 do Redis (`SELECT 1` no `redis-cli`), e a API usa o 0.
+
+Como funciona: o `docker-compose.yml` tem três serviços. `redis` é o cache, `api` roda `mvn spring-boot:run` e `testes` roda `mvn test`, os dois usando uma imagem com Java 17 e Maven. A pasta do projeto é montada dentro dos containers, então o que você edita em `src/` é usado na hora. O Redis não expõe porta na sua máquina; a API e os testes falam com ele pela rede interna do Docker.
 
 ## Problemas comuns
 
 | Sintoma | Solução |
 |---|---|
-| `Unable to connect to Redis` ou aviso no placar | Rode `docker compose up -d` e confira com `docker ps` |
-| Porta 6379 ocupada | Já existe outro Redis rodando. Pare-o ou use ele mesmo |
-| `mvnw` não executa no Linux/macOS | `chmod +x mvnw verificar.sh` |
-| Erro de versão do Java | Instale o JDK 17 ou mais novo e confira com `java -version` |
+| `docker: command not found` ou `docker compose` não existe | Instale o Docker Desktop (Windows/macOS) ou Docker Engine + plugin Compose (Linux) |
+| `Cannot connect to the Docker daemon` | Abra o Docker Desktop ou rode `sudo systemctl start docker` |
+| Aviso de conexão com o Redis no placar | Rode `docker compose up -d redis` e confira com `docker ps` |
+| Porta 8080 ocupada ao subir a API | Pare o que usa a 8080 ou troque `"8080:8080"` por `"8081:8080"` no `docker-compose.yml` |
+| `verificar.sh` não executa no Linux/macOS | `chmod +x verificar.sh` |
+| Uma pasta `target/` vazia apareceu no projeto | É normal: é o ponto de montagem do volume de build. Pode ignorar |
 
 ---
 
