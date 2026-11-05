@@ -1,0 +1,204 @@
+{
+  "info": {
+    "name": "Desafio: conserte o cache",
+    "description": "Chamadas da API do desafio de cache com Redis. Suba a API com `docker compose up -d` antes de usar.\n\nOs testes (aba Tests / Scripts) conferem o comportamento correto: enquanto o bug existir, eles falham.\n\nOs bugs 3 e 4 só aparecem com muitas chamadas ao mesmo tempo. O Runner do Postman executa em sequência, então para eles use os comandos curl do README.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" },
+    { "key": "eventoIngressos", "value": "7" }
+  ],
+  "item": [
+    {
+      "name": "Bug 1 · Cada um vê o próprio perfil",
+      "description": "Abra o perfil da Ana (1) e depois o do Bruno (2). Com o bug, o Bruno recebe os dados da Ana.",
+      "item": [
+        {
+          "name": "Perfil da Ana (id 1)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Retorna o perfil da Ana', () => {",
+                  "    pm.expect(pm.response.json().nome).to.eql('Ana');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/perfil/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["perfil", "1"]
+            }
+          }
+        },
+        {
+          "name": "Perfil do Bruno (id 2)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Retorna o perfil do Bruno, não o da Ana', () => {",
+                  "    const perfil = pm.response.json();",
+                  "    pm.expect(perfil.id).to.eql(2);",
+                  "    pm.expect(perfil.nome).to.eql('Bruno');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/perfil/2",
+              "host": ["{{baseUrl}}"],
+              "path": ["perfil", "2"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Bug 2 · O nome novo do evento aparece na lista",
+      "description": "Liste os eventos (o resultado vai para o cache), renomeie o evento 1 e liste de novo. Com o bug, a lista continua com o nome antigo.",
+      "item": [
+        {
+          "name": "Listar eventos",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/eventos",
+              "host": ["{{baseUrl}}"],
+              "path": ["eventos"]
+            }
+          }
+        },
+        {
+          "name": "Renomear evento 1",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Gera um nome diferente a cada envio para o teste não passar por acaso",
+                  "pm.collectionVariables.set('novoNome', 'Show de Rock - ' + Date.now());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('A lista mostra o nome novo do evento 1', () => {",
+                  "    const evento = pm.response.json().find(e => e.id === 1);",
+                  "    pm.expect(evento.nome).to.eql(pm.collectionVariables.get('novoNome'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "{{baseUrl}}/eventos/1/nome?nome={{novoNome}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["eventos", "1", "nome"],
+              "query": [{ "key": "nome", "value": "{{novoNome}}" }]
+            }
+          }
+        },
+        {
+          "name": "Listar eventos de novo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('A lista mostra o nome novo do evento 1', () => {",
+                  "    const evento = pm.response.json().find(e => e.id === 1);",
+                  "    pm.expect(evento.nome).to.eql(pm.collectionVariables.get('novoNome'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/eventos",
+              "host": ["{{baseUrl}}"],
+              "path": ["eventos"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Bug 3 · Não vender mais ingressos do que existem",
+      "description": "Abra as vendas com 100 ingressos e compre. Uma compra por vez funciona; o bug só aparece com compras simultâneas. Para isso, use o comando curl do README.",
+      "item": [
+        {
+          "name": "Abrir vendas (100 ingressos)",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/ingressos/{{eventoIngressos}}/abrir?quantidade=100",
+              "host": ["{{baseUrl}}"],
+              "path": ["ingressos", "{{eventoIngressos}}", "abrir"],
+              "query": [{ "key": "quantidade", "value": "100" }]
+            }
+          }
+        },
+        {
+          "name": "Comprar ingresso",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "{{baseUrl}}/ingressos/{{eventoIngressos}}/comprar",
+              "host": ["{{baseUrl}}"],
+              "path": ["ingressos", "{{eventoIngressos}}", "comprar"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Bug 4 (bônus) · Stampede quando o ranking expira",
+      "description": "Anote o total de consultas, chame o ranking e confira o total de novo. O stampede só aparece com muitas chamadas ao mesmo tempo logo depois de a chave expirar. Para isso, use o comando curl do README.",
+      "item": [
+        {
+          "name": "Ranking",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/ranking",
+              "host": ["{{baseUrl}}"],
+              "path": ["ranking"]
+            }
+          }
+        },
+        {
+          "name": "Total de consultas ao banco",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/banco/consultas",
+              "host": ["{{baseUrl}}"],
+              "path": ["banco", "consultas"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

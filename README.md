@@ -42,12 +42,25 @@ A Ana abre o perfil dela. Um minuto depois, o Bruno abre o dele e aparece o nome
 - Teste: `Bug1PerfilTest`
 - Endpoint para ver na mão: `GET /perfil/1` e depois `GET /perfil/2`
 
+```bash
+curl http://localhost:8080/perfil/1
+curl http://localhost:8080/perfil/2
+# Com o bug, a segunda chamada também devolve {"id":1,"nome":"Ana",...}
+```
+
 ### Bug 2 · O nome novo do evento aparece na lista
 
 O organizador corrige o nome de um evento. O banco é atualizado, mas a lista de eventos continua mostrando o nome antigo por até 10 minutos.
 
 - Teste: `Bug2EventoTest`
 - Endpoint: `GET /eventos`, depois `PUT /eventos/1/nome?nome=Novo` e `GET /eventos` de novo
+
+```bash
+curl http://localhost:8080/eventos
+curl -X PUT "http://localhost:8080/eventos/1/nome?nome=Novo%20Nome"
+curl http://localhost:8080/eventos
+# Com o bug, o evento 1 continua aparecendo como "Show de Rock"
+```
 
 ### Bug 3 · Não vender mais ingressos do que existem
 
@@ -56,12 +69,40 @@ Na abertura de vendas, 40 processos tentam comprar 400 vezes ao mesmo tempo um e
 - Teste: `Bug3IngressoTest`
 - Endpoints: `POST /ingressos/7/abrir?quantidade=100` e `POST /ingressos/7/comprar`
 
+```bash
+# Abre as vendas com 100 ingressos
+curl -X POST "http://localhost:8080/ingressos/7/abrir?quantidade=100"
+
+# Faz 400 compras, 40 de cada vez, e conta quantas deram certo
+seq 400 | xargs -P 40 -I{} curl -s -X POST http://localhost:8080/ingressos/7/comprar -w '\n' | grep -c '"comprou":true'
+# O certo é 100. Com o bug, o número passa bem de 100
+```
+
 ### Bug 4 (bônus) · Stampede quando o ranking expira
 
 O ranking é caro de calcular e fica 60 segundos no cache. Quando a chave expira, chegam 200 pedidos juntos e dezenas deles vão ao banco ao mesmo tempo para recalcular a mesma coisa. Só um deveria recalcular; os outros esperam.
 
 - Teste: `Bug4RankingTest`
 - Endpoint: `GET /ranking` e `GET /banco/consultas`
+
+```bash
+# Apaga a chave do ranking para simular que ela acabou de expirar
+docker exec desafio-cache-redis redis-cli DEL ranking:geral
+
+# Anota o total de consultas, faz 200 pedidos ao mesmo tempo e confere de novo
+curl http://localhost:8080/banco/consultas
+seq 200 | xargs -P 200 -I{} curl -s -o /dev/null http://localhost:8080/ranking
+curl http://localhost:8080/banco/consultas
+# O certo é o total subir 1 (no máximo 2). Com o bug, sobe dezenas ou centenas
+```
+
+Os comandos com `seq` e `xargs` funcionam no Linux, no macOS e, no Windows, no Git Bash ou no WSL. Suba a API antes com `docker compose up -d`.
+
+## Testar no Postman
+
+A pasta `postman/` tem a coleção `desafio-cache.postman_collection.json`. No Postman, use **Import** e selecione esse arquivo. A coleção tem uma pasta por bug com as chamadas acima, e a variável `baseUrl` (padrão `http://localhost:8080`) define o endereço da API.
+
+Nos bugs 1 e 2, as requisições têm testes que conferem o comportamento correto: enquanto o bug existir, eles falham na aba **Test Results**. Os bugs 3 e 4 só aparecem com muitas chamadas simultâneas, e o Runner do Postman executa uma de cada vez; para eles, use os comandos `curl` acima.
 
 ## Comandos úteis
 
