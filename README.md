@@ -74,8 +74,9 @@ Na abertura de vendas, 40 processos tentam comprar 400 vezes ao mesmo tempo um e
 curl -X POST "http://localhost:8080/ingressos/7/abrir?quantidade=100"
 
 # Faz 400 compras, 40 de cada vez, e conta quantas deram certo
-seq 400 | xargs -P 40 -I{} curl -s -X POST http://localhost:8080/ingressos/7/comprar -w '\n' | grep -c '"comprou":true'
+seq 400 | xargs -P 40 -I{} curl -s -X POST http://localhost:8080/ingressos/7/comprar | grep -o '"comprou":true' | wc -l
 # O certo é 100. Com o bug, o número passa bem de 100
+# Para repetir, rode o "abrir" de novo antes: ele volta o estoque para 100
 ```
 
 ### Bug 4 (bônus) · Stampede quando o ranking expira
