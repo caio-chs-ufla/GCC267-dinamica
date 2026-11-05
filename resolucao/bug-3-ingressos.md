@@ -16,7 +16,7 @@ redis.opsForValue().set(chave, String.valueOf(restantes - 1));   // SET
 
 Vários processos leem o mesmo valor (por exemplo, 57), todos acham que há ingresso e todos gravam 56. Foram vendidos vários ingressos, mas o estoque só caiu um.
 
-## Correção A: script Lua (a do slide)
+## Correção A: script Lua
 
 O Redis executa o script inteiro de uma vez, sem nenhum outro comando no meio.
 
@@ -57,8 +57,10 @@ public boolean comprar(long eventoId) {
 }
 ```
 
-Também passa nos testes. Vale comentar que, por um instante, o contador pode ficar negativo; com Lua isso nunca acontece.
+Também passa nos testes. Observação: por um instante, o contador pode ficar negativo; com Lua isso nunca acontece.
 
-## Para explicar
+## Motivo do bug
 
-Ler, decidir e escrever em comandos separados não é atômico. Para um passo só, use `INCR`, `DECR` ou `SET NX`. Para mais de um passo, use Lua.
+A compra lê o estoque (`GET`), decide e grava (`SET`) em comandos separados, então a operação não é atômica. Entre a leitura e a escrita, outros processos leem o mesmo valor, todos acham que ainda há ingresso e todos gravam o mesmo número. O estoque cai menos do que o total vendido (race condition).
+
+Para um passo só, use um comando atômico (`INCR`, `DECR`, `SET NX`). Para mais de um passo, use um script Lua.

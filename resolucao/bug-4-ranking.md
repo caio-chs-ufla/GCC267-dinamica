@@ -66,9 +66,8 @@ private void dormir(long ms) {
 }
 ```
 
-## Para explicar
+## Motivo do bug
 
-- `NX` faz o `SET` só funcionar se a chave não existir: é o lock.
-- `EX 5` garante que o lock some sozinho se o processo morrer no meio.
-- A segunda leitura do cache, depois de pegar o lock, evita recalcular quando outro processo acabou de terminar. Sem ela, o teste às vezes mostra 2 consultas em vez de 1.
-- Outra opção é o TTL com jitter, que espalha as expirações de chaves diferentes. Ele não resolve o caso de uma única chave muito acessada, que é este.
+Quando a chave expira, nada coordena quem vai recalcular: todos os pedidos que chegam naquele instante dão miss e vão ao banco calcular a mesma coisa (cache stampede).
+
+Com um lock (`SET ... NX EX 5`), só um processo recalcula e os outros esperam o valor aparecer no cache. O `NX` faz o `SET` só funcionar se a chave ainda não existir, e o `EX` faz o lock expirar sozinho caso o processo morra no meio.

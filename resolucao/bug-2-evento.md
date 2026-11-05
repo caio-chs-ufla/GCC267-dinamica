@@ -24,6 +24,8 @@ public void renomear(long eventoId, String novoNome) {
 
 A ordem importa: primeiro grava no banco, depois apaga a chave. Se apagar antes, outro leitor pode buscar o valor velho no banco e gravar de novo no cache antes da atualização.
 
-## Para explicar
+## Motivo do bug
 
-É a estratégia de invalidação do slide de escrita. O custo é que a próxima leitura será um miss, mas ela já traz o valor novo. Não vale trocar o TTL para 1 segundo: o teste de cache continua exigindo que leituras repetidas não vão ao banco.
+A escrita atualiza o banco, mas não invalida o cache. A cópia guardada em `eventos:ativos` fica desatualizada até o TTL expirar.
+
+Ao gravar no banco e em seguida apagar a chave, a próxima leitura dá miss e já traz o valor novo. Diminuir o TTL não resolve: só reduz a janela em que o dado errado aparece e faz o cache perder o sentido.

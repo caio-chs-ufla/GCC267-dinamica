@@ -1,12 +1,12 @@
 # Desafio: conserte o cache
 
-Dinâmica prática da apresentação **T09 · Cache e desempenho com Redis** (GCC267 Projeto Integrador · 2026/2).
+Exercício prático de **cache e desempenho com Redis** (GCC267 Projeto Integrador · 2026/2).
 
-O projeto é uma API Spring Boot que usa Redis como cache. Ela funciona, mas tem **4 bugs de cache**. Cada bug é um dos problemas que vimos nos slides. A sua equipe precisa encontrar e corrigir o máximo possível em **8 minutos**.
+O projeto é uma API Spring Boot que usa Redis como cache. Ela funciona, mas tem **4 bugs de cache**. O objetivo é encontrar e corrigir cada um deles.
 
 O "banco de dados" é simulado: cada consulta demora 100 ms e é contada. Assim os testes conseguem ver quantas vezes alguém foi ao banco.
 
-## Antes da aula (faça em casa)
+## Preparando o ambiente
 
 Você só precisa do **Docker** (com o Docker Compose). Não é preciso instalar Java, Maven nem Redis: tudo roda em containers.
 
@@ -20,18 +20,18 @@ A primeira execução demora alguns minutos porque baixa as imagens e as depend�
 
 Se aparecer `PLACAR: 0 de 4 bugs corrigidos`, está tudo pronto. É assim mesmo: os bugs ainda estão lá.
 
-## Como jogar
+## Como resolver
 
 1. Leia a descrição dos bugs abaixo.
 2. Encontre o código com problema em `src/main/java/br/ufla/desafiocache/service/`.
 3. Corrija e rode o verificador de novo.
-4. Cada bug corrigido vale **1 ponto**. Vence a equipe com mais pontos.
+4. Repita até o placar mostrar `4 de 4 bugs corrigidos`.
 
 Regras:
 
 - **Não mexa nos testes** (`src/test`), no `BancoSimulado` nem no `Json`.
 - Não vale "resolver" tirando o cache. Os testes também conferem que o cache continua funcionando.
-- Um bug só conta quando **todos** os testes dele passam.
+- Um bug só conta como corrigido quando **todos** os testes dele passam.
 
 ## Os bugs
 
@@ -41,7 +41,6 @@ A Ana abre o perfil dela. Um minuto depois, o Bruno abre o dele e aparece o nome
 
 - Teste: `Bug1PerfilTest`
 - Endpoint para ver na mão: `GET /perfil/1` e depois `GET /perfil/2`
-- Slide relacionado: *Tudo o que muda a resposta precisa estar na chave.*
 
 ### Bug 2 · O nome novo do evento aparece na lista
 
@@ -49,7 +48,6 @@ O organizador corrige o nome de um evento. O banco é atualizado, mas a lista de
 
 - Teste: `Bug2EventoTest`
 - Endpoint: `GET /eventos`, depois `PUT /eventos/1/nome?nome=Novo` e `GET /eventos` de novo
-- Slide relacionado: *Grave no banco e apague a chave.*
 
 ### Bug 3 · Não vender mais ingressos do que existem
 
@@ -57,7 +55,6 @@ Na abertura de vendas, 40 processos tentam comprar 400 vezes ao mesmo tempo um e
 
 - Teste: `Bug3IngressoTest`
 - Endpoints: `POST /ingressos/7/abrir?quantidade=100` e `POST /ingressos/7/comprar`
-- Slide relacionado: *Ler e depois escrever vende mais do que existe.*
 
 ### Bug 4 (bônus) · Stampede quando o ranking expira
 
@@ -65,7 +62,6 @@ O ranking é caro de calcular e fica 60 segundos no cache. Quando a chave expira
 
 - Teste: `Bug4RankingTest`
 - Endpoint: `GET /ranking` e `GET /banco/consultas`
-- Slide relacionado: *Stampede: uma chave expira e todos vão ao banco.*
 
 ## Comandos úteis
 
@@ -108,4 +104,4 @@ Como funciona: o `docker-compose.yml` tem três serviços. `redis` é o cache, `
 
 ---
 
-> **Para quem apresenta:** a pasta `resolucao/` tem o gabarito. Apague essa pasta antes de passar o projeto para as equipes.
+> A pasta `resolucao/` tem o gabarito, com o motivo de cada bug e a correção. Remova essa pasta antes de distribuir o projeto.

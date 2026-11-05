@@ -17,6 +17,8 @@ A chave é a mesma para todos os usuários. A Ana dá miss, o perfil dela é gra
 String chave = "perfil:" + userId;
 ```
 
-## Para explicar
+## Motivo do bug
 
-Tudo o que muda a resposta precisa estar na chave: usuário, idioma, página, filtros, permissões. Uma forma de achar esse bug é olhar os parâmetros do método e conferir se cada um aparece na chave.
+A chave do cache não inclui o `userId`, que é justamente o que muda a resposta. Todos os usuários passam a compartilhar a mesma entrada no Redis, e o primeiro que acessa "contamina" o cache para os demais.
+
+Regra geral: tudo o que muda a resposta (usuário, idioma, página, filtros, permissões) precisa fazer parte da chave.

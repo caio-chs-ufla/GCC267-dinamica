@@ -1,6 +1,6 @@
 # Gabarito
 
-> Não entregue esta pasta para as equipes.
+> Esta pasta contém as respostas. Remova-a antes de distribuir o projeto.
 
 | Bug | Arquivo a corrigir | O que muda |
 |---|---|---|
@@ -9,15 +9,6 @@
 | 3 · Ingressos | `src/main/java/br/ufla/desafiocache/service/IngressoService.java` | Trocar GET + SET por uma operação atômica |
 | 4 · Ranking (bônus) | `src/main/java/br/ufla/desafiocache/service/RankingService.java` | Lock com `SET NX EX` para só um processo recalcular |
 
-Cada arquivo `bug-N-*.md` mostra o trecho com problema, a correção e o que falar ao explicar.
+Cada arquivo `bug-N-*.md` mostra o trecho com problema, a correção e o motivo do bug.
 
-Para conferir o gabarito inteiro de uma vez, copie os arquivos `.java` desta pasta para `src/main/java/br/ufla/desafiocache/service/` e rode `verificar.cmd`. O placar deve mostrar `4 de 4`.
-
-## Sugestão de roteiro (8 min)
-
-| Tempo | O que acontece |
-|---|---|
-| 0:00 | Projetar o placar com `0 de 4` e ler os bugs do README |
-| 0:30 | Equipes corrigem. Quem fechar um bug levanta a mão e mostra o placar |
-| 6:00 | Parar. Mostrar a correção dos bugs 1 a 3 (1 min cada, no máximo) |
-| 8:00 | Placar final; o bug 4 vira gancho para o slide de stampede |
+Para conferir o gabarito inteiro de uma vez, copie os arquivos `.java` desta pasta para `src/main/java/br/ufla/desafiocache/service/` e rode `./verificar.sh` (Windows: `verificar.cmd`). O placar deve mostrar `4 de 4`.
